@@ -44,7 +44,7 @@ const ls = {
 };
 
 
-    const STATUSES = ['Open','Sample','Order','Delivered'];
+    const STATUSES = ['Open','Sample','Order','Delivered','with manufacturer'];
     function toEnglishStatus(s){
       const t = String(s || '').trim();
       if (t === 'Open' || t === 'Sample' || t === 'Order' || t === 'Delivered') return t;
@@ -52,6 +52,7 @@ const ls = {
       if (t === 'Bestellen') return 'Order';
       if (t === 'Geliefert') return 'Delivered';
       if (t === 'Sample') return 'Sample';
+	  if (t=== 'with manufacturer') return'with manufacturer';
       return 'Open';
     }
 
@@ -376,7 +377,7 @@ const ls = {
     // helpers
     function badge(status){
       const st = toEnglishStatus(status);
-      const c = st === 'Delivered' ? 'background:rgba(52,211,153,.12); border-color:#065f46; color:#a7f3d0;' : st === 'Order' ? 'background:rgba(96,165,250,.12); border-color:#1e3a8a; color:#bfdbfe;' : st === 'Sample' ? 'background:rgba(251,191,36,.12); border-color:#7c2d12; color:#fde68a;' : 'background:#0b1225; border-color:#334155; color:#cbd5e1;';
+      const c = st === 'Delivered' ? 'background:rgba(52,211,153,.12); border-color:#065f46; color:#a7f3d0;' : st === 'Order' ? 'background:rgba(96,165,250,.12); border-color:#1e3a8a; color:#bfdbfe;' : st === 'Sample' ? 'background:rgba(251,191,36,.12); border-color:#7c2d12; color:#fde68a;' : 'background:#0b1225; border-color:#334155; color:#cbd5e1;': st === 'with manufacturer' ? 'background:rgba(89,193,232,.08); border-color:#59c1e8; color:#59c1e8;' : 'background:#0b1225; border-color:#334155; color:#cbd5e1;';
       return `<span class="chip" style="${c}">${st}</span>`;
     }
     function statusEditor(r){
