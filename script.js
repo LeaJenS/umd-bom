@@ -1,13 +1,48 @@
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
+
+// === EDIT THESE TWO LINES WITH YOUR VALUES ===================================
+// Put your Project URL from Supabase Settings → API (looks like https://xxxx.supabase.co)
+const SUPABASE_URL = "https://knwisdfowjvocuquwcyo.supabase.co";    // <--- TODO: INSERT YOUR SUPABASE URL
+// Put your 'anon public key' from Supabase Settings → API
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtud2lzZGZvd2p2b2N1cXV3Y3lvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5OTY1MDQsImV4cCI6MjA3ODU3MjUwNH0.jTi27OmqFwXTkzfWrMJHCdNrnZkxl3LIHgOocTyhhh0";              // <--- TODO: INSERT YOUR ANON KEY
+// Optional: change the site id (row key) if you want multiple environments
+const SITE_ID = "prod";
+
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// Debounce helper so we don't write on every keystroke
+function debounce(fn, ms=400){ let t; return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn(...args), ms); }; }
+
 // ===== Multi-assembly mode =====
     const SINGLE_MODE = false; // enable multiple assemblies
 
     // ===== Data model =====
     // assemblies[] with { id, name, items[] } where items have id, mpn, hersteller, shop, status, lager, selected
 
-    const ls = {
-      get: (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
-      set: (k, v) => localStorage.setItem(k, JSON.stringify(v))
+    /* Replaces localStorage with Supabase-backed JSON storage */
+const ls = {
+  // Load full state JSON from Supabase
+  get: async (k, d) => {
+    if (k !== 'umd.bom.v2.multi') return d;
+    const { data, error } = await supabase
+      .from('site_states')
+      .select('state')
+      .eq('id', SITE_ID)
+      .maybeSingle();
+    if (error) { console.warn('[Supabase] load error', error); return d; }
+    return data?.state ?? d;
+  },
+  // Save state JSON to Supabase (debounced)
+  set: (() => {
+    const save = async (k, v) => {
+      if (k !== 'umd.bom.v2.multi') return;
+      const { error } = await supabase.from('site_states').upsert({ id: SITE_ID, state: v });
+      if (error) console.warn('[Supabase] save error', error);
     };
+    return debounce((k, v)=> save(k, v), 500);
+  })()
+};
+
 
     const STATUSES = ['Open','Sample','Order','Delivered'];
     function toEnglishStatus(s){
@@ -93,8 +128,8 @@
       for (const a of state.assemblies){ for (const it of a.items){ it.status = toEnglishStatus(it.status); } }
     }
 
-    function load() {
-      const v = ls.get('umd.bom.v2.multi');
+    async function load() {
+      const v = await ls.get('umd.bom.v2.multi');
       if (v && v.assemblies) Object.assign(state, v);
       if (!state.assemblies || !state.assemblies.length) {
         seed();
@@ -308,7 +343,8 @@
         const cb = e.target.closest('input[type="checkbox"][data-id]');
         if (cb) {
           const id = cb.getAttribute('data-id');
-          const item = a.items.find(x => x.id === id); if (item) item.selected = cb.checked;
+          const item = a.items.find(x => x.id === id); if (!item) return;
+          item.selected = cb.checked;
           save(); renderAll(); return;
         }
         const sel = e.target.closest('select[data-id]');
@@ -484,9 +520,32 @@
       setToolbarDisabled(false);
     }
 
-    function setup(){
-      load();
+    // Realtime subscription: when another user saves, we update our UI
+function subscribeRealtime(onRemoteUpdate){
+  supabase.channel('realtime:site_states')
+    .on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'site_states',
+      filter: `id=eq.${SITE_ID}`
+    }, payload => {
+      if (payload?.new?.state) {
+        console.log('[Supabase] realtime update received');
+        onRemoteUpdate(payload.new.state);
+      }
+    })
+    .subscribe();
+}
+
+async function setup(){
+      await load();
       renderAll();
+
+      // Start realtime syncing with other clients
+      subscribeRealtime((remoteState)=>{ Object.assign(state, remoteState); renderAll(); });
+
+      // Persist once to ensure the DB row exists
+      save();
 
       // Search (per active view)
       const q = document.getElementById('q');
