@@ -1,15 +1,15 @@
 :root {
-      --bg: #0f172a;           /* slate-900 */
-      --panel: #111827;        /* gray-900 */
-      --panel-2: #1f2937;      /* gray-800 */
-      --text: #e5e7eb;         /* gray-200 */
-      --muted: #9ca3af;        /* gray-400 */
-      --accent: #60a5fa;       /* blue-400 */
-      --ring: rgba(96,165,250,.45);
-      --ok: #34d399;           /* emerald-400 */
-      --warn: #fbbf24;         /* amber-400 */
-      --danger: #ef4444;       /* red-500 */
-    }
+  --bg: #0f172a;           /* dunkler Hintergrund bleibt angenehm */
+  --panel: #111827;
+  --panel-2: #1f2937;
+  --text: #e5e7eb;
+  --muted: #666767;        /* aus deinem Schema */
+  --accent: #fd670f;       /* Hauptakzent (Orange) */
+  --ring: rgba(253,103,15,.45); /* Fokus-Glow mit Orange */
+  --ok: #59c1e8;           /* "Ok"/Info in deinem Blau */
+  --warn: #fd670f;         /* Warnung/Highlight ebenfalls Orange */
+  --danger: #ef4444;       /* Rot lassen wir für echte Fehler */
+}
     html, body { height: 100%; }
     body { margin: 0; background: linear-gradient(180deg, var(--bg), #0b1225 60%); color: var(--text); font: 14px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; }
     .container { max-width: 1200px; margin: 28px auto; padding: 0 16px; }
@@ -28,11 +28,12 @@
 
     .search { flex: 1 1 240px; }
     .search input { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid #334155; background:#0b1225; color:var(--text); outline: none; }
-    .search input:focus { box-shadow: 0 0 0 4px var(--ring); border-color:#3b82f6; }
+    .search input:focus { box-shadow: 0 0 0 4px var(--ring); border-color: var(--accent); }
+
 
     .btn { appearance: none; border: 1px solid #334155; background: #0b1225; color: var(--text); padding: 9px 12px; border-radius: 10px; cursor: pointer; transition: .15s ease; font-weight: 600; }
     .btn:hover { transform: translateY(-1px); border-color:#475569; }
-    .btn.primary { border-color:#3b82f6; }
+    .btn.primary { border-color: var(--accent); }
     .btn.ghost { background: transparent; }
     .btn.small { padding: 6px 8px; font-weight: 500; }
     .danger { color:#fecaca; border-color:#7f1d1d; }
@@ -42,7 +43,7 @@
     thead th[data-sortable="false"] { cursor: default; }
     thead th .arrow { position:absolute; right:6px; opacity:.7; }
     tbody td { border-bottom: 1px dotted #223; padding: 10px 8px; }
-    tbody tr:hover { background: rgba(59,130,246,.06); }
+    tbody tr:hover { background: rgba(253,103,15,.06); }
     .num { text-align: right; }
     .center { text-align: center; }
 
@@ -60,7 +61,10 @@
     label { font-size: 12px; color: var(--muted); display:block; margin-bottom:6px; }
     input, select, textarea { width: 100%; padding: 10px 12px; border-radius: 10px; border:1px solid #334155; background:#0b1225; color:var(--text); outline:none; }
     textarea { min-height: 160px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
-    input:focus, select:focus, textarea:focus { box-shadow: 0 0 0 4px var(--ring); border-color:#3b82f6; }
+    input:focus, select:focus, textarea:focus {
+          box-shadow: 0 0 0 4px var(--ring);
+          border-color: var(--accent);
+    }
     .row { display:flex; gap:8px; justify-content:flex-end; margin-top: 12px; }
 
     .icon-btn { border:none; background:transparent; cursor:pointer; }
