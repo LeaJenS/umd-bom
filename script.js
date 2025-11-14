@@ -376,10 +376,20 @@ const ls = {
 
     // helpers
     function badge(status){
-      const st = toEnglishStatus(status);
-      const c = st === 'Delivered' ? 'background:rgba(52,211,153,.12); border-color:#065f46; color:#a7f3d0;' : st === 'Order' ? 'background:rgba(96,165,250,.12); border-color:#1e3a8a; color:#bfdbfe;' : st === 'Sample' ? 'background:rgba(251,191,36,.12); border-color:#7c2d12; color:#fde68a;' : 'background:#0b1225; border-color:#334155; color:#cbd5e1;': st === 'with manufacturer' ? 'background:rgba(89,193,232,.08); border-color:#59c1e8; color:#59c1e8;' : 'background:#0b1225; border-color:#334155; color:#cbd5e1;';
-      return `<span class="chip" style="${c}">${st}</span>`;
-    }
+ 	 const st = toEnglishStatus(status);
+	  const c =
+  	  st === 'Delivered'
+      ? 'background:rgba(52,211,153,.12); border-color:#065f46; color:#a7f3d0;'
+    : st === 'Order'
+      ? 'background:rgba(96,165,250,.12); border-color:#1e3a8a; color:#bfdbfe;'
+    : st === 'Sample'
+      ? 'background:rgba(251,191,36,.12); border-color:#7c2d12; color:#fde68a;'
+    : st === 'with manufacturer'
+      ? 'background:rgba(89,193,232,.08); border-color:#59c1e8; color:#59c1e8;'
+    : 'background:#0b1225; border-color:#334155; color:#cbd5e1;';
+ 		 return `<span class="chip" style="${c}">${st}</span>`;
+	}
+
     function statusEditor(r){
       const cur = toEnglishStatus(r.status);
       const opts = STATUSES.map(o => `<option ${o===cur?'selected':''}>${o}</option>`).join('');
