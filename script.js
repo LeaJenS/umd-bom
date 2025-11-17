@@ -104,8 +104,6 @@ async function initSupabase() {
   }
 }
 async function checkAuth() {
-	await initSupabase();
-	await checkAuth();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     showScreen("screen-login");
@@ -119,8 +117,13 @@ const ls = {
   if (k !== STORAGE_KEY) return fallback;
 
   if (!supabase) {
-    ...
+  try {
+    const raw = localStorage.getItem(k);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch {
+    return fallback;
   }
+}
 
   // FIX: Ohne Workspace-ID nicht laden
   if (!CURRENT_WORKSPACE_ID) {
@@ -168,6 +171,12 @@ async function openWorkspace(id) {
   await loadState();
   renderAll();
   showScreen("screen-app");
+
+  // Realtime erst aktivieren NACHDEM Workspace gesetzt ist
+  subscribeRealtime(remote => {
+    Object.assign(state, remote);
+    renderAll();
+  });
 }
 
 // === Assemblies-API =========================================================
@@ -230,12 +239,10 @@ async function loadState() {
 	state.active = loaded?.active ?? null;
 	state.order = loaded?.order ?? { col: "mpn", dir: 1 };
 	state.appTitle = loaded?.appTitle ?? "UMD BOM";
-
   }
  if (!state.assemblies) {
   state.assemblies = [];
-}
-  }
+	}
   for (const a of state.assemblies) {
     a.id = a.id || uid();
     a.name = a.name || "Main";
@@ -777,10 +784,12 @@ function setupActions() {
 });
 
 document.getElementById("btnRegister")?.addEventListener("click", async () => {
-  const email = loginEmail.value.trim();
-  const pw = loginPassword.value.trim();
+  const email = document.getElementById("loginEmail").value.trim();
+  const pw = document.getElementById("loginPassword").value.trim();
+
   const { error } = await supabase.auth.signUp({ email, password: pw });
   if (error) return alert("Registrierung fehlgeschlagen: " + error.message);
+
   alert("Registrierung erfolgreich! Bitte E-Mail bestätigen.");
 });
 
@@ -811,18 +820,18 @@ document.getElementById("btnLogout")?.addEventListener("click", async () => {
   showScreen("screen-login");
 });
 
-async function setup() {
+
+ async function setup() {
   console.log("setup startet");
-  await initSupabase();    // Supabase versuchen, sonst localStorage
-  await loadState();       // state aus Supabase oder localStorage
-  renderAll();
+  await initSupabase();   // Supabase-Client initialisieren
+
+  // Login-Status prüfen und den passenden Screen zeigen
+  await checkAuth();
+
+  // Buttons, Modals, usw. verbinden
   setupActions();
-  subscribeRealtime(remote => {
-    Object.assign(state, remote);
-    renderAll();
-  });
-  saveState();             // einmal initial speichern
 }
+
 
 async function loadWorkspacesList() {
   const { data } = await supabase
