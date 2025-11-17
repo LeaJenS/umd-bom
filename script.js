@@ -181,6 +181,7 @@ function saveState() {
 }
 
 async function openWorkspace(id) {
+try {
   CURRENT_WORKSPACE_ID = id;
   await loadState();
   renderAll();
@@ -191,6 +192,10 @@ async function openWorkspace(id) {
     Object.assign(state, remote);
     renderAll();
   });
+} catch (err) {
+    console.error("[openWorkspace] Fehler:", err);
+    alert("Fehler beim Öffnen der BOM: " + err.message);
+  }
 }
 
 // === Assemblies-API =========================================================
@@ -246,38 +251,57 @@ function deletePart(assemblyId, itemId) {
 }
 
 // === Laden des States =======================================================
+// === Laden des States =======================================================
 async function loadState() {
-  // If Supabase is not available → fallback local
-  if (!supabase) {
-    console.warn("[LoadState] Supabase unavailable → local mode only.");
-    const saved = ls.get(STORAGE_KEY);  // FIXED KEY
-    if (saved) state = saved;
-    return;
+  const loaded = await ls.get(STORAGE_KEY, null);
+
+  // 1) Etwas geladen?
+  if (loaded && Array.isArray(loaded.assemblies)) {
+    state.assemblies = loaded.assemblies;
+    state.active     = loaded.active ?? null;
+    state.order      = loaded.order  ?? { col: "mpn", dir: 1 };
+    state.appTitle   = loaded.appTitle ?? "UMD BOM";
+  } else {
+    // 2) Kein gespeicherter State für diesen Workspace → frisch starten
+    state.assemblies = [];
+    state.active     = null;
+    state.order      = { col: "mpn", dir: 1 };
+    state.appTitle   = "UMD BOM";
   }
 
-  // Load state for workspace
-  const { data, error } = await supabase
-    .from("site_states")
-    .select("state")
-    .eq("id", CURRENT_WORKSPACE_ID)
-    .single();
-
-  if (error) {
-    console.error("[LoadState] Error loading from Supabase:", error);
-    state = getInitialState();
-    return;
+  // 3) Daten normalisieren
+  for (const a of state.assemblies) {
+    a.id   = a.id   || uid();
+    a.name = a.name || "Main";
+    a.items = (a.items || []).map(it => ({
+      id: it.id || uid(),
+      selected: !!it.selected,
+      mpn: it.mpn || "",
+      hersteller: it.hersteller || "",
+      shop: it.shop || "",
+      status: toEnglishStatus(it.status),
+      lager: asNumber(it.lager),
+      benoetigt: asNumber(it.benoetigt),
+    }));
   }
 
-  if (!data) {
-    console.warn("[LoadState] No state found → creating new");
-    state = getInitialState();
-    await saveStateToSupabase();  // ensure it exists
-    return;
+  // 4) Aktive Ansicht wählen, ohne auf [0].id zuzugreifen, wenn nichts da ist
+  if (!state.assemblies.length) {
+    // Noch keine Assemblies → z.B. "All parts"
+    state.active = "all";
+  } else if (
+    !state.active ||
+    (state.active !== "all" &&
+     state.active !== "order" &&
+     !state.assemblies.some(a => a.id === state.active))
+  ) {
+    state.active = state.assemblies[0].id;
   }
 
-  // SUCCESS
-  state = data.state;
+  if (!state.appTitle) state.appTitle = "UMD - BOM";
 }
+
+
 
 async function saveStateToSupabase() {
   await supabase
