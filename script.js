@@ -1,8 +1,15 @@
+// === SPA Screen Handling =====================================================
+function showScreen(name) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById(name)?.classList.add("active");
+}
+
 // === Konfiguration ===========================================================
 const SUPABASE_URL = "https://knwisdfowjvocuquwcyo.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtud2lzZGZvd2p2b2N1cXV3Y3lvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5OTY1MDQsImV4cCI6MjA3ODU3MjUwNH0.jTi27OmqFwXTkzfWrMJHCdNrnZkxl3LIHgOocTyhhh0";
-const SITE_ID = "prod";
-const STORAGE_KEY = "umd.bom.v2.multi";
+let CURRENT_WORKSPACE_ID = null;
+const STORAGE_KEY = "workspace_state";
+
 
 // === kleine Helfer ===========================================================
 function debounce(fn, ms = 400) {
@@ -11,8 +18,7 @@ function debounce(fn, ms = 400) {
     clearTimeout(t);
     t = setTimeout(() => fn(...args), ms);
   };
-}
-
+} 
 const STATUSES = ["Open", "Sample", "Order", "Delivered"];
 function toEnglishStatus(s) {
   const t = String(s || "").trim();
@@ -28,7 +34,7 @@ const state = {
   active: null,     // assembly id oder 'all' / 'order'
   query: "",
   order: { col: "mpn", dir: 1 },
-  appTitle: "UMD - BOM",
+  appTitle: "UMD BOM",
 };
 
 const uid  = () => Math.random().toString(36).slice(2, 9);
@@ -97,25 +103,35 @@ async function initSupabase() {
     supabase = null;
   }
 }
-
+async function checkAuth() {
+	await initSupabase();
+	await checkAuth();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    showScreen("screen-login");
+    return;
+  }
+  loadWorkspacesList();
+  showScreen("screen-workspaces");
+}
 const ls = {
-  get: async (k, fallback) => {
-    if (k !== STORAGE_KEY) return fallback;
-    // Fallback: localStorage
-    if (!supabase) {
-      try {
-        const raw = localStorage.getItem(k);
-        return raw ? JSON.parse(raw) : fallback;
-      } catch {
-        return fallback;
-      }
-    }
-    // Supabase
-    const { data, error } = await supabase
-      .from("site_states")
-      .select("state")
-      .eq("id", SITE_ID)
-      .maybeSingle();
+ 	get: async (k, fallback) => {
+  if (k !== STORAGE_KEY) return fallback;
+
+  if (!supabase) {
+    ...
+  }
+
+  // FIX: Ohne Workspace-ID nicht laden
+  if (!CURRENT_WORKSPACE_ID) {
+    return fallback;
+  }
+
+  const { data, error } = await supabase
+    .from("site_states")
+    .select("state")
+    .eq("id", CURRENT_WORKSPACE_ID)
+    .maybeSingle();
     if (error) {
       console.warn("[Supabase] load error", error);
       return fallback;
@@ -136,7 +152,7 @@ const ls = {
       }
       const { error } = await supabase
         .from("site_states")
-        .upsert({ id: SITE_ID, state: v });
+        .upsert({ id: CURRENT_WORKSPACE_ID, state: v });
       if (error) console.warn("[Supabase] save error", error);
     };
     return debounce((k, v) => save(k, v), 500);
@@ -145,6 +161,13 @@ const ls = {
 
 function saveState() {
   ls.set(STORAGE_KEY, state);
+}
+
+async function openWorkspace(id) {
+  CURRENT_WORKSPACE_ID = id;
+  await loadState();
+  renderAll();
+  showScreen("screen-app");
 }
 
 // === Assemblies-API =========================================================
@@ -203,10 +226,15 @@ function deletePart(assemblyId, itemId) {
 async function loadState() {
   const loaded = await ls.get(STORAGE_KEY, null);
   if (loaded && loaded.assemblies) {
-    Object.assign(state, loaded);
+	state.assemblies = loaded?.assemblies ?? [];
+	state.active = loaded?.active ?? null;
+	state.order = loaded?.order ?? { col: "mpn", dir: 1 };
+	state.appTitle = loaded?.appTitle ?? "UMD BOM";
+
   }
-  if (!state.assemblies || !state.assemblies.length) {
-    addAssembly("Main", []);
+ if (!state.assemblies) {
+  state.assemblies = [];
+}
   }
   for (const a of state.assemblies) {
     a.id = a.id || uid();
@@ -740,7 +768,24 @@ function setupActions() {
     const sel = btn.getAttribute("data-close");
     if (sel) closeModal(sel);
   });
+  document.getElementById("btnLogin")?.addEventListener("click", async () => {
+  const email = document.getElementById("loginEmail").value.trim();
+	const pw = document.getElementById("loginPassword").value.trim();
+  const { error } = await supabase.auth.signInWithPassword({ email, password: pw });
+  if (error) return alert("Login fehlgeschlagen: " + error.message);
+  checkAuth();
+});
+
+document.getElementById("btnRegister")?.addEventListener("click", async () => {
+  const email = loginEmail.value.trim();
+  const pw = loginPassword.value.trim();
+  const { error } = await supabase.auth.signUp({ email, password: pw });
+  if (error) return alert("Registrierung fehlgeschlagen: " + error.message);
+  alert("Registrierung erfolgreich! Bitte E-Mail bestätigen.");
+});
+
 }
+
 
 // === Realtime nur, wenn Supabase ok =========================================
 function subscribeRealtime(onRemoteUpdate) {
@@ -750,7 +795,7 @@ function subscribeRealtime(onRemoteUpdate) {
       event: "*",
       schema: "public",
       table: "site_states",
-      filter: `id=eq.${SITE_ID}`,
+      filter: `id=eq.${CURRENT_WORKSPACE_ID}`,
     }, payload => {
       if (payload?.new?.state) {
         console.log("[Supabase] realtime update received");
@@ -761,6 +806,11 @@ function subscribeRealtime(onRemoteUpdate) {
 }
 
 // === Setup ===================================================================
+document.getElementById("btnLogout")?.addEventListener("click", async () => {
+  await supabase.auth.signOut();
+  showScreen("screen-login");
+});
+
 async function setup() {
   console.log("setup startet");
   await initSupabase();    // Supabase versuchen, sonst localStorage
@@ -772,6 +822,24 @@ async function setup() {
     renderAll();
   });
   saveState();             // einmal initial speichern
+}
+
+async function loadWorkspacesList() {
+  const { data } = await supabase
+    .from("workspaces")
+    .select("*")
+    .order("name");
+
+  const list = document.getElementById("workspaceList");
+  list.innerHTML = "";
+
+  for (const ws of data) {
+    const btn = document.createElement("button");
+    btn.className = "btn";
+    btn.textContent = ws.name;
+    btn.addEventListener("click", () => openWorkspace(ws.id));
+    list.append(btn);
+  }
 }
 
 document.addEventListener("DOMContentLoaded", () => {
