@@ -103,15 +103,29 @@ async function initSupabase() {
     supabase = null;
   }
 }
+
+
 async function checkAuth() {
+  // Wenn Supabase nicht verfügbar ist → Offline-/Single-User-Modus
+  if (!supabase) {
+    console.warn("[Auth] Supabase nicht verfügbar – starte lokalen Modus");
+    CURRENT_WORKSPACE_ID = "local";
+    await loadState();
+    renderAll();
+    showScreen("screen-app");
+    return;
+  }
+
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     showScreen("screen-login");
     return;
   }
-  loadWorkspacesList();
+  await loadWorkspacesList();
   showScreen("screen-workspaces");
 }
+
+
 const ls = {
  	get: async (k, fallback) => {
   if (k !== STORAGE_KEY) return fallback;
@@ -816,20 +830,27 @@ function subscribeRealtime(onRemoteUpdate) {
 
 // === Setup ===================================================================
 document.getElementById("btnLogout")?.addEventListener("click", async () => {
-  await supabase.auth.signOut();
+  if (supabase) {
+    await supabase.auth.signOut();
+  }
   showScreen("screen-login");
 });
 
 
- async function setup() {
+async function setup() {
   console.log("setup startet");
-  await initSupabase();   // Supabase-Client initialisieren
-
-  // Login-Status prüfen und den passenden Screen zeigen
-  await checkAuth();
-
-  // Buttons, Modals, usw. verbinden
-  setupActions();
+  try {
+    await initSupabase();
+    await checkAuth();
+    setupActions();
+  } catch (err) {
+    console.error("Fehler in setup:", err);
+    // Im Zweifel wenigstens App anzeigen, damit der Nutzer was sieht
+    CURRENT_WORKSPACE_ID = "local";
+    await loadState();
+    renderAll();
+    showScreen("screen-app");
+  }
 }
 
 
