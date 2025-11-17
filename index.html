@@ -7,6 +7,34 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <!-- -------------- LOGIN SCREEN -------------- -->
+<div id="screen-login" class="screen active">
+  <div class="center-box">
+    <h2>Login</h2>
+    <input id="loginEmail" placeholder="Email" />
+    <input id="loginPassword" type="password" placeholder="Passwort" />
+    <button id="btnLogin">Login</button>
+    <button id="btnRegister">Registrieren</button>
+  </div>
+</div>
+
+<!-- -------------- WORKSPACE SCREEN -------------- -->
+<div id="screen-workspaces" class="screen">
+  <div class="center-box">
+    <h2>Deine BOMs</h2>
+    <div id="workspaceList"></div>
+
+    <input id="newWorkspaceName" placeholder="Neue BOM erstellen…" />
+    <button id="btnAddWorkspace">Erstellen</button>
+
+    <button id="btnLogout">Logout</button>
+  </div>
+</div>
+
+<!-- -------------- APP SCREEN (DEINE BOM) -------------- -->
+<div id="screen-app" class="screen">
+
+  <!-- AB HIER BEGINNT DEINE ORIGINAL HTML -->
   <div class="container">
     <div class="header">
       <h1 class="app-title" id="appTitle">UMD BOM</h1>
@@ -164,6 +192,8 @@
       </div>
     </div>
   </div>
-
-<script type="module" src="script.js"></script></body>
+</div> <!-- Ende screen-app -->
+<script type="module" src="script.js"></script>
+</body>
 </html>
+
