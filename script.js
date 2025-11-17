@@ -842,6 +842,20 @@ async function loadWorkspacesList() {
   }
 }
 
+document.getElementById("btnAddWorkspace")?.addEventListener("click", async () => {
+  const name = document.getElementById("newWorkspaceName").value.trim();
+  if (!name) return alert("Bitte einen Namen eingeben!");
+
+  const { error } = await supabase
+    .from("workspaces")
+    .insert({ name });   // <<---------------------------- HIER IST DER INSERT
+
+  if (error) return alert("Fehler beim Erstellen: " + error.message);
+
+  document.getElementById("newWorkspaceName").value = "";
+  loadWorkspacesList(); // Liste neu laden
+});
+
 document.addEventListener("DOMContentLoaded", () => {
   setup();
 });
