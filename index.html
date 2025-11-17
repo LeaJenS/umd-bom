@@ -1,147 +1,169 @@
 <!DOCTYPE html>
-
-<html lang="en">
+<html lang="de">
 <head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1" name="viewport"/>
-<title>UMD-BOM</title>
-
-<link href="style.css" rel="stylesheet"/></head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>UMD – Accumulator</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
 <body>
-<div class="container">
-<div class="header">
-<h1 class="app-title" id="appTitle">UMD – Accumulator</h1>
-<nav aria-label="Assembly &amp; Order" class="tabs" id="tabs" role="tablist"></nav>
-</div>
-<div class="panel" id="controls">
-<div class="toolbar" style="gap:12px; flex-wrap:wrap">
-<div class="search" style="flex-basis:100%"><input id="q" placeholder="Search current assembly (MPN, Manufacturer, Shop, Status, Stock)"/></div>
-<button class="btn" id="resetView">Reset view</button>
-<button class="btn" id="addPart">New part</button>
-<button class="btn" id="bulkAdd">Add multiple parts</button>
-</div>
-</div>
-<div id="views"></div>
-<!-- Bottom actions -->
-<div class="panel" id="bottomActions">
-<div class="toolbar" style="justify-content:flex-end; gap:8px">
-<button class="btn" id="editAppTitle">Edit title</button>
-<button class="btn" id="renameAssemblyBtnBottom">Rename assembly</button>
-<button class="btn primary" id="addAssemblyBtn">Add assembly</button>
-</div>
-</div>
-</div>
-<!-- Modal: New Part -->
-<div aria-labelledby="partTitle" aria-modal="true" class="modal" id="modalPart" role="dialog">
-<div class="dialog">
-<h2 id="partTitle">Add new part</h2>
-<div class="grid">
-<div class="full"><label for="partMPN">MPN</label><input id="partMPN"/></div>
-<div><label for="partManu">Manufacturer</label><input id="partManu"/></div>
-<div><label for="partShop">Shop</label><input id="partShop" placeholder="URL or name"/></div>
-<div><label for="partStatus">Status</label>
-<select id="partStatus">
-<option>Open</option>
-<option>Sample</option>
-<option>Order</option>
-<option>Delivered</option>
-</select>
-</div>
-<div><label for="partStock">Stock</label><input id="partStock" min="0" type="number" value="0"/></div>
-</div>
-<div class="row">
-<button class="btn ghost" data-close="#modalPart">Cancel</button>
-<button class="btn primary" id="savePart">Add</button>
-</div>
-</div>
-</div>
-<!-- Modal: Bulk add / Import -->
-<div aria-labelledby="bulkTitle" aria-modal="true" class="modal" id="modalBulk" role="dialog">
-<div class="dialog">
-<h2 id="bulkTitle">Add multiple parts</h2>
-<div class="grid">
-<div class="full">
-<label for="bulkText">Paste rows (Excel copy &amp; paste). Columns in this order:
-            <strong>MPN; Manufacturer; Shop; Status; Stock</strong>. Delimiter is auto-detected (tab, semicolon, comma). Status optional, stock optional.</label>
-<textarea id="bulkText" placeholder="STM32G431CBU6\tST\thttps://www.st.com\tOrder\t10
-10k 1% 0603\tYageo\tde.rs-online.com\tOpen\t1200"></textarea>
-</div>
-<div class="full">
-<label for="bulkDelimiter">Delimiter detection</label>
-<select id="bulkDelimiter">
-<option value="auto">Automatic</option>
-<option value="\t">Tab (\t)</option>
-<option value=";">Semicolon (;)</option>
-<option value=",">Comma (,)</option>
-</select>
-</div>
-</div>
-<div class="row">
-<button class="btn ghost" data-close="#modalBulk">Cancel</button>
-<button class="btn" id="previewBulk">Preview</button>
-<button class="btn primary" id="applyBulk">Insert</button>
-</div>
-<div class="hint" id="bulkPreview" style="margin-top:8px"></div>
-</div>
-</div>
-<!-- Modal: Edit App Title -->
-<div aria-labelledby="appTitleEdit" aria-modal="true" class="modal" id="modalAppTitle" role="dialog">
-<div class="dialog">
-<h2 id="appTitleEdit">Edit site title</h2>
-<div class="grid">
-<div class="full">
-<label for="appTitleInput">Site title</label>
-<input id="appTitleInput"/>
-</div>
-</div>
-<div class="row">
-<button class="btn ghost" data-close="#modalAppTitle">Cancel</button>
-<button class="btn primary" id="saveAppTitle">Save</button>
-</div>
-</div>
-</div>
-<!-- Modal: Rename assembly -->
-<div aria-labelledby="renameTitle" aria-modal="true" class="modal" id="modalRename" role="dialog">
-<div class="dialog">
-<h2 id="renameTitle">Rename assembly</h2>
-<div class="grid">
-<div class="full" id="renameSelectWrap">
-<label for="renameSelect">Choose assembly</label>
-<select id="renameSelect"></select>
-</div>
-<div class="full">
-<label for="renameName">New name</label>
-<input id="renameName"/>
-</div>
-</div>
-<div class="row">
-<button class="btn ghost" data-close="#modalRename">Cancel</button>
-<button class="btn primary" id="saveRename">Rename</button>
-</div>
-</div>
-</div>
-<!-- Modal: Add Assembly -->
-<div aria-labelledby="addAsmTitle" aria-modal="true" class="modal" id="modalAddAssembly" role="dialog">
-<div class="dialog">
-<h2 id="addAsmTitle">Add assembly</h2>
-<div class="grid">
-<div class="full">
-<label for="newAsmName">Assembly name</label>
-<input id="newAsmName" placeholder="Assembly 2"/>
-</div>
-</div>
-<div class="row">
-<button class="btn ghost" data-close="#modalAddAssembly">Cancel</button>
-<button class="btn primary" id="saveAddAssembly">Add</button>
-</div>
-</div>
-</div>
-<div class="row">
-<button class="btn ghost" data-close="#modalRename">Cancel</button>
-<button class="btn primary" id="saveRename">Rename</button>
-</div>
+  <div class="container">
+    <div class="header">
+      <h1 class="app-title" id="appTitle">UMD – Accumulator</h1>
+      <nav id="tabs" class="tabs" role="tablist" aria-label="Assembly &amp; Order"></nav>
+    </div>
 
+    <div id="controls" class="panel">
+      <div class="toolbar" style="gap:12px;flex-wrap:wrap">
+        <div class="search" style="flex-basis:100%">
+          <input id="q" placeholder="Search current assembly (MPN, Manufacturer, Shop, Status, Stock)" />
+        </div>
+        <button class="btn" id="resetView">Reset view</button>
+        <button class="btn" id="addPart">New part</button>
+        <button class="btn" id="bulkAdd">Add multiple parts</button>
+      </div>
+    </div>
 
+    <div id="views"></div>
+
+    <div id="bottomActions" class="panel">
+      <div class="toolbar" style="justify-content:flex-end;gap:8px">
+        <button class="btn" id="editAppTitle">Edit title</button>
+        <button class="btn" id="renameAssemblyBtnBottom">Rename assembly</button>
+        <button class="btn primary" id="addAssemblyBtn">Add assembly</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: New Part -->
+  <div id="modalPart" class="modal" role="dialog" aria-modal="true" aria-labelledby="partTitle">
+    <div class="dialog">
+      <h2 id="partTitle">Add new part</h2>
+      <div class="grid">
+        <div class="full">
+          <label for="partMPN">MPN</label>
+          <input id="partMPN" />
+        </div>
+        <div>
+          <label for="partManu">Manufacturer</label>
+          <input id="partManu" />
+        </div>
+        <div>
+          <label for="partShop">Shop</label>
+          <input id="partShop" placeholder="URL or name" />
+        </div>
+        <div>
+          <label for="partStatus">Status</label>
+          <select id="partStatus">
+            <option>Open</option>
+            <option>Sample</option>
+            <option>Order</option>
+            <option>Delivered</option>
+          </select>
+        </div>
+        <div>
+          <label for="partStock">Stock</label>
+          <input id="partStock" type="number" min="0" value="0" />
+        </div>
+        <div>
+          <label for="partRequired">Required</label>
+          <input id="partRequired" type="number" min="0" value="0" />
+        </div>
+      </div>
+      <div class="row">
+        <button class="btn ghost" data-close="#modalPart">Cancel</button>
+        <button class="btn primary" id="savePart">Add</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Bulk add / Import -->
+  <div id="modalBulk" class="modal" role="dialog" aria-modal="true" aria-labelledby="bulkTitle">
+    <div class="dialog">
+      <h2 id="bulkTitle">Add multiple parts</h2>
+      <div class="grid">
+        <div class="full">
+          <label for="bulkText">
+            Paste rows (Excel copy &amp; paste). Columns in this order:
+            <strong>MPN; Manufacturer; Shop; Status; Stock; Required</strong>. Delimiter is auto-detected (tab, semicolon, comma).
+            Status optional, stock optional, required optional.
+          </label>
+          <textarea id="bulkText" placeholder="STM32G431CBU6&#9;ST&#9;https://www.st.com&#9;Order&#9;10
+10k 1% 0603&#9;Yageo&#9;de.rs-online.com&#9;Open&#9;1200"></textarea>
+        </div>
+        <div class="full">
+          <label for="bulkDelimiter">Delimiter detection</label>
+          <select id="bulkDelimiter">
+            <option value="auto">Automatic</option>
+            <option value="\t">Tab (\t)</option>
+            <option value=";">Semicolon (;)</option>
+            <option value=",">Comma (,)</option>
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <button class="btn ghost" data-close="#modalBulk">Cancel</button>
+        <button class="btn" id="previewBulk">Preview</button>
+        <button class="btn primary" id="applyBulk">Insert</button>
+      </div>
+      <div id="bulkPreview" class="hint" style="margin-top:8px"></div>
+    </div>
+  </div>
+
+  <!-- Modal: Edit App Title -->
+  <div id="modalAppTitle" class="modal" role="dialog" aria-modal="true" aria-labelledby="appTitleEdit">
+    <div class="dialog">
+      <h2 id="appTitleEdit">Edit site title</h2>
+      <div class="grid">
+        <div class="full">
+          <label for="appTitleInput">Site title</label>
+          <input id="appTitleInput" />
+        </div>
+      </div>
+      <div class="row">
+        <button class="btn ghost" data-close="#modalAppTitle">Cancel</button>
+        <button class="btn primary" id="saveAppTitle">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Rename assembly -->
+  <div id="modalRename" class="modal" role="dialog" aria-modal="true" aria-labelledby="renameTitle">
+    <div class="dialog">
+      <h2 id="renameTitle">Rename assembly</h2>
+      <div class="grid">
+        <div class="full" id="renameSelectWrap">
+          <label for="renameSelect">Choose assembly</label>
+          <select id="renameSelect"></select>
+        </div>
+        <div class="full">
+          <label for="renameName">New name</label>
+          <input id="renameName" />
+        </div>
+      </div>
+      <div class="row">
+        <button class="btn ghost" data-close="#modalRename">Cancel</button>
+        <button class="btn primary" id="saveRename">Rename</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Add Assembly -->
+  <div id="modalAddAssembly" class="modal" role="dialog" aria-modal="true" aria-labelledby="addAsmTitle">
+    <div class="dialog">
+      <h2 id="addAsmTitle">Add assembly</h2>
+      <div class="grid">
+        <div class="full">
+          <label for="newAsmName">Assembly name</label>
+          <input id="newAsmName" placeholder="Assembly 2" />
+        </div>
+      </div>
+      <div class="row">
+        <button class="btn ghost" data-close="#modalAddAssembly">Cancel</button>
+        <button class="btn primary" id="saveAddAssembly">Add</button>
+      </div>
+    </div>
+  </div>
 
 <script type="module" src="script.js"></script></body>
 </html>
