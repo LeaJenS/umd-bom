@@ -247,39 +247,46 @@ function deletePart(assemblyId, itemId) {
 
 // === Laden des States =======================================================
 async function loadState() {
-  const loaded = await ls.get(STORAGE_KEY, null);
-  if (loaded && loaded.assemblies) {
-	state.assemblies = loaded?.assemblies ?? [];
-	state.active = loaded?.active ?? null;
-	state.order = loaded?.order ?? { col: "mpn", dir: 1 };
-	state.appTitle = loaded?.appTitle ?? "UMD BOM";
+  // If Supabase is not available → fallback local
+  if (!supabase) {
+    console.warn("[LoadState] Supabase unavailable → local mode only.");
+    const saved = ls.get(STORAGE_KEY);  // FIXED KEY
+    if (saved) state = saved;
+    return;
   }
- if (!state.assemblies) {
-  state.assemblies = [];
-	}
-  for (const a of state.assemblies) {
-    a.id = a.id || uid();
-    a.name = a.name || "Main";
-    a.items = (a.items || []).map(it => ({
-      id: it.id || uid(),
-      selected: !!it.selected,
-      mpn: it.mpn || "",
-      hersteller: it.hersteller || "",
-      shop: it.shop || "",
-      status: toEnglishStatus(it.status),
-      lager: asNumber(it.lager),
-      benoetigt: asNumber(it.benoetigt),
-    }));
+
+  // Load state for workspace
+  const { data, error } = await supabase
+    .from("site_states")
+    .select("state")
+    .eq("id", CURRENT_WORKSPACE_ID)
+    .single();
+
+  if (error) {
+    console.error("[LoadState] Error loading from Supabase:", error);
+    state = getInitialState();
+    return;
   }
-  if (
-    !state.active ||
-    (state.active !== "all" &&
-     state.active !== "order" &&
-     !state.assemblies.some(a => a.id === state.active))
-  ) {
-    state.active = state.assemblies[0].id;
+
+  if (!data) {
+    console.warn("[LoadState] No state found → creating new");
+    state = getInitialState();
+    await saveStateToSupabase();  // ensure it exists
+    return;
   }
-  if (!state.appTitle) state.appTitle = "UMD - BOM";
+
+  // SUCCESS
+  state = data.state;
+}
+
+async function saveStateToSupabase() {
+  await supabase
+    .from("site_states")
+    .upsert({
+      id: CURRENT_WORKSPACE_ID,
+      user_id: supabase.auth.getUser().data.user.id,
+      state
+    });
 }
 
 // === Tabs, Views & Rendering ================================================
